@@ -1,2 +1,2 @@
-# moopa
-A Python library for parsing information from climate model outputs
+# morte
+Model Ouput Regression Testing
