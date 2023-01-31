@@ -1,3 +1,6 @@
+# Copyright 2022 ACCESS-NRI and contributors. See the top-level COPYRIGHT file for details.
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Generic model class, primarily to be inherited by other models.
 """
@@ -199,14 +202,20 @@ class BasePerformanceInfo:
         self.base_dir = base_dir
         self.reference_file = reference_file
 
+        self.PBS_output_file = "*.o*"
+
     def setup(self):
+        self.parse_PBS_info()
         self.parse_info()
+
+    def parse_PBS_info(self):
+        """
+        Parse basic information from the PBS output file summary
+        """
+        pass
 
     def parse_info(self):
         """
         Model-specific code to parse info into dictionary
         """
-        pass
-
-    def parse_PBS_output(self):
         pass
