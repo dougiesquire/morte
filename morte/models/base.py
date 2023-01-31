@@ -18,46 +18,46 @@ logger.addHandler(log_handler)
 YAMANIFEST_HASH = "binhash-nomtime"
 
 
-class BaseFileManifest:
+class BaseReproducibilityInfo:
     """
     Generic class for keeping track of checksums/hashes of model output files
     """
 
-    def __init__(self, base_dir, reference_dir, manifest_file):
+    def __init__(self, base_dir, reference_dir, reference_file):
         """
-        Initialise a BaseFileManifest object.
+        Initialise a BaseReproducibilityInfo object.
 
         Parameters
         ----------
         base_dir : str
             Path to base directory of the model test experiment
         reference_dir : str
-            Path to directory containing reference datasets (often called Known Good Outputs)
-        manifest_file : str
-            Path to manifest file containing hashes/checksums of reference datasets
+            Path to directory containing reference datasets (often called "Known Good Outputs")
+        reference_file : str
+            Path to yamanifest file containing hashes/checksums of reference datasets
         """
 
         self.base_dir = base_dir
         self.reference_dir = reference_dir
-        self.manifest_file = manifest_file
+        self.reference_file = reference_file
 
         self.output_files = []
 
         # Make sure directories exists
         os.makedirs(self.reference_dir, exist_ok=True)
-        os.makedirs(os.path.dirname(self.manifest_file), exist_ok=True)
+        os.makedirs(os.path.dirname(self.reference_file), exist_ok=True)
 
         # Initialise the reference and current manifests
-        self.reference_manifest = Yamanifest(self.manifest_file, [YAMANIFEST_HASH])
+        self.reference_manifest = Yamanifest(self.reference_file, [YAMANIFEST_HASH])
         self.current_manifest = Yamanifest(None, [YAMANIFEST_HASH])
 
     def setup(self):
         # Set up the reference manifest
-        if os.path.isfile(self.manifest_file):
-            has_manifest_file = True
+        if os.path.isfile(self.reference_file):
+            has_reference_file = True
             self.reference_manifest.load()
         else:
-            has_manifest_file = False
+            has_reference_file = False
 
         # Make sure all reference files ("KGO"s) exist
         outputs_missing_references = [
@@ -70,10 +70,10 @@ class BaseFileManifest:
                 "Not all reference files exist. Copying from current model output"
             )
             self.update_reference(
-                outputs_missing_references, update_manifest=has_manifest_file
+                outputs_missing_references, update_manifest=has_reference_file
             )
 
-        if not has_manifest_file:
+        if not has_reference_file:
             logger.warning(
                 "Manifest file does not exist. Generating manifest from reference files"
             )
@@ -133,7 +133,7 @@ class BaseFileManifest:
 
     def update_manifest(self, output_files=None):
         """
-        Update the reference manifest.
+        Update the reference manifest for the specified output files.
 
         Parameters
         ----------
@@ -173,12 +173,40 @@ class BaseFileManifest:
         else:
             return NotImplemented
 
+    def dump(self):
+        """
+        Dump the reference manifest from yaml file.
+        """
+        self.reference_manifest.dump()
 
-class BaseInfo:
+
+class BasePerformanceInfo:
     """
-    Generic class for keeping track of information parsed from model output
+    Generic class for keeping track of performance information parsed from model output
     """
 
     def __init__(self, base_dir, reference_file):
+        """
+        Initialise a BasePerformanceInfo object.
+
+        Parameters
+        ----------
+        base_dir : str
+            Path to base directory of the model test experiment
+        reference_file : str
+            Path to yaml file containing reference performance information
+        """
         self.base_dir = base_dir
         self.reference_file = reference_file
+
+    def setup(self):
+        self.parse_info()
+
+    def parse_info(self):
+        """
+        Model-specific code to parse info into dictionary
+        """
+        pass
+
+    def parse_PBS_output(self):
+        pass

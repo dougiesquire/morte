@@ -2,15 +2,20 @@
 Interface for the ACCESS-ESM model
 """
 
-from .base import BaseInfo, BaseFileManifest
+from .base import BasePerformanceInfo, BaseReproducibilityInfo
 
 
-class PerformanceInfo(BaseInfo):
+class PerformanceInfo(BasePerformanceInfo):
     def __init__(self, base_dir, reference_file=None):
         super().__init__(base_dir, reference_file)
 
+        self.setup()
 
-class ReproducibilityInfo(BaseFileManifest):
+    def parse_info(self):
+        print("Parsing info")
+
+
+class ReproducibilityInfo(BaseReproducibilityInfo):
     def __init__(self, base_dir, reference_dir, manifest_file):
         super().__init__(base_dir, reference_dir, manifest_file)
 

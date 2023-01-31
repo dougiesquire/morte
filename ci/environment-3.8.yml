@@ -1,0 +1,12 @@
+name: morte-test
+channels:
+  - coecms
+  - conda-forge
+dependencies:
+  - pytest
+  - python=3.8
+  - pip
+  - yamanifest
+  - pip:
+    - codecov
+    - pytest-cov
