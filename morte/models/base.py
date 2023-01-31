@@ -6,7 +6,7 @@ import os
 import shutil
 import logging
 
-from yamanifest.manifest import Manifest as YaManifest
+from yamanifest.manifest import Manifest as Yamanifest
 
 logger = logging.getLogger(__name__)
 log_handler = logging.StreamHandler()
@@ -14,6 +14,8 @@ log_handler.setLevel(logging.INFO)
 log_format = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 log_handler.setFormatter(log_format)
 logger.addHandler(log_handler)
+
+YAMANIFEST_HASH = "binhash-nomtime"
 
 
 class BaseFileManifest:
@@ -23,7 +25,7 @@ class BaseFileManifest:
 
     def __init__(self, base_dir, reference_dir, manifest_file):
         """
-        Initialise a BaseFileManifest object
+        Initialise a BaseFileManifest object.
 
         Parameters
         ----------
@@ -41,45 +43,49 @@ class BaseFileManifest:
 
         self.output_files = []
 
-    def setup(self):
-
         # Make sure directories exists
         os.makedirs(self.reference_dir, exist_ok=True)
         os.makedirs(os.path.dirname(self.manifest_file), exist_ok=True)
 
-        self.reference_files = [
-            os.path.join(self.reference_dir, output) for output in self.output_files
-        ]
+        # Initialise the reference and current manifests
+        self.reference_manifest = Yamanifest(self.manifest_file, [YAMANIFEST_HASH])
+        self.current_manifest = Yamanifest(None, [YAMANIFEST_HASH])
+
+    def setup(self):
+        # Set up the reference manifest
+        if os.path.isfile(self.manifest_file):
+            has_manifest_file = True
+            self.reference_manifest.load()
+        else:
+            has_manifest_file = False
 
         # Make sure all reference files ("KGO"s) exist
-        self.outputs_missing_references = [
+        outputs_missing_references = [
             output
             for output in self.output_files
             if not os.path.isfile(os.path.join(self.reference_dir, output))
         ]
-        if self.outputs_missing_references:
+        if outputs_missing_references:
             logger.warning(
                 "Not all reference files exist. Copying from current model output"
             )
-            for output in self.outputs_missing_references:
-                self.update_reference(output)
+            self.update_reference(
+                outputs_missing_references, update_manifest=has_manifest_file
+            )
 
-        # Initialise the reference and latest manifests
-        self.reference_manifest = YaManifest(self.manifest_file, ["binhash"])
-
-        if os.path.isfile(self.manifest_file):
-            self.reference_manifest.load()
-        else:
+        if not has_manifest_file:
             logger.warning(
                 "Manifest file does not exist. Generating one from reference files"
             )
             self.reference_manifest.add(
-                filepaths=self.output_files, fullpaths=self.reference_files
+                filepaths=self.output_files,
+                fullpaths=[
+                    os.path.join(self.reference_dir, output)
+                    for output in self.output_files
+                ],
             )
-            self.reference_manifest.dump()
 
-        # Initialise the manifest for the current experiment
-        self.current_manifest = YaManifest(None, ["binhash"])
+        # Set up the current manifest
         self.current_manifest.add(
             filepaths=self.output_files,
             fullpaths=[
@@ -87,32 +93,85 @@ class BaseFileManifest:
             ],
         )
 
-    def update_reference(self, output_file):
+    def update_reference(self, output_files=None, update_manifest=True):
         """
-        Copy an output file to the reference directory. Overwrite if the file already
-        exists
+        Update the reference files and manifest. I.e. copy output files to the reference
+        directory and optionally update the reference manifest for these new files. Overwrite
+        files that already exists.
+
+        Parameters
+        ----------
+        output_files: list or str or None, optional
+            The output files to update. If None, update for all filepaths in the current manifest
+        update_manifest: boolean, optional
+            Whether or not to update the reference manifest
         """
 
-        logger.info(f"(Over)writing reference file for {output_file}")
-
-        output_file_full = os.path.join(self.base_dir, output_file)
-        reference_file = os.path.join(self.reference_dir, output_file)
-
-        if os.path.isfile(output_file_full):
-            os.makedirs(os.path.dirname(reference_file), exist_ok=True)
-            shutil.copy(output_file_full, reference_file)
+        if output_files is None:
+            output_files = self.current_manifest.data.keys()
         else:
-            logger.warning(f"Output file {output_file} does not exists")
+            if type(output_files) is str:
+                output_files = [
+                    output_files,
+                ]
+
+        outputs = [os.path.join(self.base_dir, output) for output in output_files]
+        references = [
+            os.path.join(self.reference_dir, output) for output in output_files
+        ]
+
+        for output, reference in zip(outputs, references):
+            logger.info(f"(Over)writing reference file: {reference}")
+            if os.path.isfile(output):
+                os.makedirs(os.path.dirname(reference), exist_ok=True)
+                shutil.copy(output, reference)
+            else:
+                logger.warning(f"Output file {output} does not exists")
+
+        if update_manifest:
+            self.update_manifest(output_files=output_files)
+
+    def update_manifest(self, output_files=None):
+        """
+        Update the reference manifest.
+
+        Parameters
+        ----------
+        output_files: list or str or None, optional
+            The output files to update. If None, update for all filepaths in the current manifest
+        """
+
+        if output_files is None:
+            output_files = self.current_manifest.data.keys()
+        else:
+            if type(output_files) is str:
+                output_files = [
+                    output_files,
+                ]
+
+        references = [
+            os.path.join(self.reference_dir, output) for output in output_files
+        ]
+        self.reference_manifest.add(
+            filepaths=output_files, fullpaths=references, force=True
+        )
 
     def compare(self):
-        """Compare reference and current manifests"""
+        """
+        Compare current and reference manifests and return list of files with differing hashes
+        """
 
-        return self.current_manifest.equals(self.reference_manifest, paths=False)
-
-    def dump(self):
-        """Dump reference manifest to yaml file"""
-
-        self.reference_manifest.dump()
+        if isinstance(self.reference_manifest, self.current_manifest.__class__):
+            different = []
+            for file in self.current_manifest:
+                for fn, val in self.current_manifest.data[file]["hashes"].items():
+                    if fn not in self.reference_manifest.data[file]["hashes"]:
+                        different.append(file)
+                    if self.reference_manifest.data[file]["hashes"][fn] != val:
+                        different.append(file)
+            return different
+        else:
+            return NotImplemented
 
 
 class BaseInfo:
