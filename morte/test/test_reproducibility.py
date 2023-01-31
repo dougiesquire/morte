@@ -77,7 +77,33 @@ def test_missing_manifest(reference_dir_same, reference_dir_diff, caplog):
             "./doesnotexist.yaml",
         )
     assert (
-        "Manifest file does not exist. Generating one from reference files"
+        "Manifest file does not exist. Generating manifest from reference files"
+        in caplog.text
+    )
+    differences = ri.compare()
+    assert not differences
+
+
+def test_initial_run(reference_dir_empty, caplog):
+    """
+    Test cases where no reference data or manifest exists. This would be the
+    situation the first time a test model experiment is run.
+    """
+    # Reference directory consistent with outputs
+    base_dir = reference_dir_empty[0]
+    reference_dir = reference_dir_empty[1]
+    with caplog.at_level(logging.WARNING):
+        ri = ReproducibilityInfo(
+            base_dir,
+            reference_dir,
+            "./doesnotexist.yaml",
+        )
+    assert (
+        "Not all reference files exist. Copying from current model output"
+        in caplog.text
+    )
+    assert (
+        "Manifest file does not exist. Generating manifest from reference files"
         in caplog.text
     )
     differences = ri.compare()

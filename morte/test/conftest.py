@@ -79,6 +79,4 @@ def reference_dir_missing(tmp_path_factory, base_dir):
 def reference_dir_empty(tmp_path_factory, base_dir):
     """Reference directory and manifest with no data"""
     reference_dir = tmp_path_factory.mktemp("references_empty")
-    mf = Yamanifest(reference_dir / "manifest.yaml", [YAMANIFEST_HASH])
-    mf.dump()
     return base_dir, reference_dir

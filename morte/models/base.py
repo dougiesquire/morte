@@ -75,7 +75,7 @@ class BaseFileManifest:
 
         if not has_manifest_file:
             logger.warning(
-                "Manifest file does not exist. Generating one from reference files"
+                "Manifest file does not exist. Generating manifest from reference files"
             )
             self.reference_manifest.add(
                 filepaths=self.output_files,
