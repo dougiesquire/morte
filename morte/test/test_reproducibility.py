@@ -3,31 +3,27 @@ import logging
 from morte.models.test import REPRO_OUTPUT_FILES, ReproducibilityInfo
 
 
-def test_no_change(reference_dir_same):
+def test_no_change(repro_dirs_same):
     """
     Test case where the output and reference directories contain the same files
     """
-    base_dir = reference_dir_same[0]
-    reference_dir = reference_dir_same[1]
     ri = ReproducibilityInfo(
-        base_dir,
-        reference_dir,
-        str(reference_dir / "manifest.yaml"),
+        repro_dirs_same[0],
+        repro_dirs_same[1],
+        str(repro_dirs_same[1] / "manifest.yaml"),
     )
     differences = ri.compare()
     assert not differences
 
 
-def test_all_changed(reference_dir_diff):
+def test_all_changed(repro_dirs_diff):
     """
     Test case where the reference data has changed relative to the output data
     """
-    base_dir = reference_dir_diff[0]
-    reference_dir = reference_dir_diff[1]
     ri = ReproducibilityInfo(
-        base_dir,
-        reference_dir,
-        str(reference_dir / "manifest.yaml"),
+        repro_dirs_diff[0],
+        repro_dirs_diff[1],
+        str(repro_dirs_diff[1] / "manifest.yaml"),
     )
     differences = ri.compare()
     assert set(differences) == set(REPRO_OUTPUT_FILES)
@@ -43,17 +39,15 @@ def test_all_changed(reference_dir_diff):
     assert not differences
 
 
-def test_missing_reference(reference_dir_missing, caplog):
+def test_missing_reference(repro_dirs_missing, caplog):
     """
     Test case where some reference datasets are missing
     """
-    base_dir = reference_dir_missing[0]
-    reference_dir = reference_dir_missing[1]
     with caplog.at_level(logging.WARNING):
         ri = ReproducibilityInfo(
-            base_dir,
-            reference_dir,
-            str(reference_dir / "manifest.yaml"),
+            repro_dirs_missing[0],
+            repro_dirs_missing[1],
+            str(repro_dirs_missing[1] / "manifest.yaml"),
         )
     assert (
         "Not all reference files exist. Copying from current model output"
@@ -63,18 +57,16 @@ def test_missing_reference(reference_dir_missing, caplog):
     assert not differences
 
 
-def test_missing_manifest(reference_dir_same, reference_dir_diff, caplog):
+def test_missing_manifest(repro_dirs_same, repro_dirs_empty, caplog):
     """
     Test cases where the manifest file does not exist
     """
     # Reference directory consistent with outputs
-    base_dir = reference_dir_same[0]
-    reference_dir = reference_dir_same[1]
     with caplog.at_level(logging.WARNING):
         ri = ReproducibilityInfo(
-            base_dir,
-            reference_dir,
-            "./doesnotexist.yaml",
+            repro_dirs_same[0],
+            repro_dirs_same[1],
+            str(repro_dirs_empty[1] / "manifest.yaml"),
         )
     assert (
         "Manifest file does not exist. Generating manifest from reference files"
@@ -84,19 +76,17 @@ def test_missing_manifest(reference_dir_same, reference_dir_diff, caplog):
     assert not differences
 
 
-def test_initial_run(reference_dir_empty, caplog):
+def test_initial_run(repro_dirs_empty, caplog):
     """
     Test cases where no reference data or manifest exists. This would be the
     situation the first time a test model experiment is run.
     """
     # Reference directory consistent with outputs
-    base_dir = reference_dir_empty[0]
-    reference_dir = reference_dir_empty[1]
     with caplog.at_level(logging.WARNING):
         ri = ReproducibilityInfo(
-            base_dir,
-            reference_dir,
-            "./doesnotexist.yaml",
+            repro_dirs_empty[0],
+            repro_dirs_empty[1],
+            str(repro_dirs_empty[1] / "manifest.yaml"),
         )
     assert (
         "Not all reference files exist. Copying from current model output"

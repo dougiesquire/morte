@@ -10,7 +10,8 @@ from morte.models.test import REPRO_OUTPUT_FILES
 
 
 def make_random_binary_file(fname, size):
-    """Stolen from
+    """
+    Stolen from yamanifest
     https://github.com/aidanheerdegen/yamanifest/blob/master/test/test_manifest.py
     """
     numbytes = 1024
@@ -34,7 +35,7 @@ def base_dir(tmp_path_factory):
 
 
 @pytest.fixture(scope="session")
-def reference_dir_same(tmp_path_factory, base_dir):
+def repro_dirs_same(tmp_path_factory, base_dir):
     """Reference directory and manifest with same data as output directory"""
     reference_dir = tmp_path_factory.mktemp("references_same")
     mf = Yamanifest(reference_dir / "manifest.yaml", [YAMANIFEST_HASH])
@@ -48,7 +49,7 @@ def reference_dir_same(tmp_path_factory, base_dir):
 
 
 @pytest.fixture(scope="session")
-def reference_dir_diff(tmp_path_factory, base_dir):
+def repro_dirs_diff(tmp_path_factory, base_dir):
     """Reference directory and manifest with different data to output directory"""
     reference_dir = tmp_path_factory.mktemp("references_diff")
     mf = Yamanifest(reference_dir / "manifest.yaml", [YAMANIFEST_HASH])
@@ -62,7 +63,7 @@ def reference_dir_diff(tmp_path_factory, base_dir):
 
 
 @pytest.fixture(scope="session")
-def reference_dir_missing(tmp_path_factory, base_dir):
+def repro_dirs_missing(tmp_path_factory, base_dir):
     """Reference directory and manifest with missing data relative to output directory"""
     reference_dir = tmp_path_factory.mktemp("references_missing")
     mf = Yamanifest(reference_dir / "manifest.yaml", [YAMANIFEST_HASH])
@@ -76,7 +77,7 @@ def reference_dir_missing(tmp_path_factory, base_dir):
 
 
 @pytest.fixture(scope="session")
-def reference_dir_empty(tmp_path_factory, base_dir):
+def repro_dirs_empty(tmp_path_factory, base_dir):
     """Reference directory and manifest with no data"""
     reference_dir = tmp_path_factory.mktemp("references_empty")
     return base_dir, reference_dir
