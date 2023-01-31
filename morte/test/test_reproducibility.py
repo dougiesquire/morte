@@ -1,108 +1,84 @@
-import os
-import shutil
+import logging
 
-from yamanifest import Manifest as Yamanifest
-
-import pytest
-
-from morte.models.base import YAMANIFEST_HASH
-from morte.models.test import OUTPUT_FILES, ReproducibilityInfo
+from morte.models.test import REPRO_OUTPUT_FILES, ReproducibilityInfo
 
 
-def make_random_binary_file(fname, size):
-    """Stolen from
-    https://github.com/aidanheerdegen/yamanifest/blob/master/test/test_manifest.py
+def test_no_change(reference_dir_same):
     """
-    numbytes = 1024
-    randombytes = os.urandom(numbytes)
-    pos = 0
-    with open(fname, "wb") as fout:
-        while pos < size:
-            fout.write(randombytes)
-            pos += numbytes
-        fout.truncate(size)
+    Test case where the output and reference directories contain the same files
+    """
+    base_dir = reference_dir_same[0]
+    reference_dir = reference_dir_same[1]
+    ri = ReproducibilityInfo(
+        base_dir,
+        reference_dir,
+        str(reference_dir / "manifest.yaml"),
+    )
+    differences = ri.compare()
+    assert not differences
 
 
-class TestReproducibility:
-    @pytest.fixture(autouse=True)
-    def setup(self, tmp_path_factory):
-        """Set up some temporary files to test against"""
+def test_all_changed(reference_dir_diff):
+    """
+    Test case where the reference data has changed relative to the output data
+    """
+    base_dir = reference_dir_diff[0]
+    reference_dir = reference_dir_diff[1]
+    ri = ReproducibilityInfo(
+        base_dir,
+        reference_dir,
+        str(reference_dir / "manifest.yaml"),
+    )
+    differences = ri.compare()
+    assert set(differences) == set(REPRO_OUTPUT_FILES)
 
-        self.base_dir = tmp_path_factory.mktemp("outputs")
-        self.output_files = OUTPUT_FILES
+    # Update only one of the references
+    ri.update_reference(differences[:1])
+    differences = ri.compare()
+    assert set(differences) == set(REPRO_OUTPUT_FILES[1:])
 
-        # Output directory
-        path = self.base_dir
-        for file in self.output_files:
-            filepath = path / file
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
-            make_random_binary_file(filepath, 20 * 1024 * 1024)
+    # Update the reference for the files that are different
+    ri.update_reference(differences)
+    differences = ri.compare()
+    assert not differences
 
-        # Reference directory with same data
-        self.reference_dir_same = tmp_path_factory.mktemp("references_same")
-        path = self.reference_dir_same
-        mf = Yamanifest(path / "manifest.yaml", [YAMANIFEST_HASH])
-        for file in self.output_files:
-            filepath = path / file
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
-            shutil.copy(self.base_dir / file, os.path.dirname(filepath))
-            mf.add(filepaths=str(file), fullpaths=str(filepath))
-        mf.dump()
 
-        # Reference directory with different data
-        self.reference_dir_diff = tmp_path_factory.mktemp("references_diff")
-        path = self.reference_dir_diff
-        mf = Yamanifest(path / "manifest.yaml", [YAMANIFEST_HASH])
-        for file in self.output_files:
-            filepath = path / file
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
-            make_random_binary_file(filepath, 20 * 1024 * 1024)
-            mf.add(filepaths=str(file), fullpaths=str(filepath))
-        mf.dump()
-
-        # Reference directory with missing data
-        self.reference_dir_missing = tmp_path_factory.mktemp("references_missing")
-        path = self.reference_dir_missing
-        mf = Yamanifest(path / "manifest.yaml", [YAMANIFEST_HASH])
-        for file in self.output_files[:-1]:
-            filepath = path / file
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
-            shutil.copy(self.base_dir / file, os.path.dirname(filepath))
-            mf.add(filepaths=str(file), fullpaths=str(filepath))
-        mf.dump()
-
-        # Reference directory with no data
-        self.reference_dir_empty = tmp_path_factory.mktemp("references_empty")
-        mf = Yamanifest(path / "manifest.yaml", [YAMANIFEST_HASH])
-
-        # Non-Existent Manifest file
-        self.nonexistent_manifest = path / "manifest.yaml"
-
-    def test_no_change(self):
-        """
-        Test case where the output and reference directories contain the same files
-        """
+def test_missing_reference(reference_dir_missing, caplog):
+    """
+    Test case where some reference datasets are missing
+    """
+    base_dir = reference_dir_missing[0]
+    reference_dir = reference_dir_missing[1]
+    with caplog.at_level(logging.WARNING):
         ri = ReproducibilityInfo(
-            self.base_dir,
-            self.reference_dir_same,
-            str(self.reference_dir_same / "manifest.yaml"),
+            base_dir,
+            reference_dir,
+            str(reference_dir / "manifest.yaml"),
         )
-        differences = ri.compare()
-        assert not differences
+    assert (
+        "Not all reference files exist. Copying from current model output"
+        in caplog.text
+    )
+    differences = ri.compare()
+    assert not differences
 
-    def test_all_changed(self):
-        """
-        Test case where the reference data has changed relative to the output data
-        """
+
+def test_missing_manifest(reference_dir_same, reference_dir_diff, caplog):
+    """
+    Test cases where the manifest file does not exist
+    """
+    # Reference directory consistent with outputs
+    base_dir = reference_dir_same[0]
+    reference_dir = reference_dir_same[1]
+    with caplog.at_level(logging.WARNING):
         ri = ReproducibilityInfo(
-            self.base_dir,
-            self.reference_dir_diff,
-            str(self.reference_dir_diff / "manifest.yaml"),
+            base_dir,
+            reference_dir,
+            "./doesnotexist.yaml",
         )
-        differences = ri.compare()
-        assert set(differences) == set(self.output_files)
-
-        # Update the reference for the files that are different
-        ri.update_reference(differences)
-        differences = ri.compare()
-        assert not differences
+    assert (
+        "Manifest file does not exist. Generating one from reference files"
+        in caplog.text
+    )
+    differences = ri.compare()
+    assert not differences
