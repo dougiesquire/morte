@@ -220,7 +220,7 @@ class BasePerformanceInfo:
         assumed that this will exist for all model runs.
         """
 
-        parser = FileParser(self.PBS_output_file)
+        parser = FileParser(os.path.join(self.base_dir, self.PBS_output_file))
         self.data["PBS summary"] = parser.parse_pbs_summary()
 
     def parse_info(self):

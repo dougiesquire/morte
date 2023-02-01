@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """
-Functions for helping to parse information from files
+Tools for helping to parse information from files
 """
 
-import os
 import re
+import glob
 import logging
 
 logger = logging.getLogger(__name__)
@@ -32,11 +32,12 @@ class FileParser:
             Path to the file to parse
         """
 
-        self.file = file
-
-        # Check that file exists
-        if not os.path.isfile(self.file):
+        found_files = glob.glob(file)
+        if not found_files:
             logger.error(f"The file {file} does not exist to be parsed")
+        if len(found_files) > 1:
+            logger.error(f"Multiple files found with the pattern {file}")
+        self.file = found_files[0]
 
     def read_file(self):
         """
@@ -48,7 +49,7 @@ class FileParser:
 
     def search_regex(self, pattern):
         """
-        Search the contents of a file for provided regex patterns; returning a list
+        Search the contents of a file for a provided regex pattern and return a list
         of the specified groupings (one for each occurrence). Stolen and adapted from
         https://github.com/metomi/rose/blob/master/metomi/rose/apps/ana_builtin/grepper.py#L492
 

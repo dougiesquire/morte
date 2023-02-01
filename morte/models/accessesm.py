@@ -9,15 +9,15 @@ from .base import BasePerformanceInfo, BaseReproducibilityInfo
 
 
 class PerformanceInfo(BasePerformanceInfo):
-    def __init__(self, base_dir, reference_file=None):
+    def __init__(self, base_dir, reference_file):
         super().__init__(base_dir, reference_file)
 
-        self.PBS_output_file = "/Users/squ027/test.o12345678"
+        self.PBS_output_file = "/Users/squ027/test.*"
 
         self.setup()
 
     def parse_info(self):
-        print("Parsing info")
+        pass
 
 
 class ReproducibilityInfo(BaseReproducibilityInfo):
