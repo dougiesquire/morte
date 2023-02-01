@@ -12,6 +12,8 @@ class PerformanceInfo(BasePerformanceInfo):
     def __init__(self, base_dir, reference_file=None):
         super().__init__(base_dir, reference_file)
 
+        self.PBS_output_file = "/Users/squ027/test.o12345678"
+
         self.setup()
 
     def parse_info(self):

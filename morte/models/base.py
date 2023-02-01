@@ -11,6 +11,8 @@ import logging
 
 from yamanifest.manifest import Manifest as Yamanifest
 
+from ..parse import FileParser
+
 logger = logging.getLogger(__name__)
 log_handler = logging.StreamHandler()
 log_handler.setLevel(logging.INFO)
@@ -199,23 +201,31 @@ class BasePerformanceInfo:
         reference_file : str
             Path to yaml file containing reference performance information
         """
+
         self.base_dir = base_dir
         self.reference_file = reference_file
+
+        self.data = {}
 
         self.PBS_output_file = "*.o*"
 
     def setup(self):
-        self.parse_PBS_info()
+
+        self.parse_pbs_summary()
         self.parse_info()
 
-    def parse_PBS_info(self):
+    def parse_pbs_summary(self):
         """
-        Parse basic information from the PBS output file summary
+        Parse basic information from the Gadi PBS output file summary. For now, it is
+        assumed that this will exist for all model runs.
         """
-        pass
+
+        parser = FileParser(self.PBS_output_file)
+        self.data["PBS summary"] = parser.parse_pbs_summary()
 
     def parse_info(self):
         """
-        Model-specific code to parse info into dictionary
+        Additional model-specific code to parse info from outputs
         """
+
         pass
