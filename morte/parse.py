@@ -17,6 +17,11 @@ log_handler.setFormatter(log_format)
 logger.addHandler(log_handler)
 
 
+class FileParserError(Exception):
+    "Generic exception for FileParser class"
+    pass
+
+
 class FileParser:
     """
     Class for parsing information from a file
@@ -33,10 +38,19 @@ class FileParser:
         """
 
         found_files = glob.glob(file)
-        if not found_files:
-            logger.error(f"The file {file} does not exist to be parsed")
-        if len(found_files) > 1:
-            logger.error(f"Multiple files found with the pattern {file}")
+
+        try:
+            if not found_files:
+                raise FileNotFoundError
+        except FileNotFoundError:
+            logger.exception(f"The file {file} does not exist to be parsed")
+
+        try:
+            if len(found_files) > 1:
+                raise FileParserError
+        except FileParserError:
+            logger.exception(f"Multiple files found with the pattern {file}")
+
         self.file = found_files[0]
 
     def read_file(self):

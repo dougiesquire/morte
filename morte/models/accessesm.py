@@ -12,7 +12,7 @@ class PerformanceInfo(BasePerformanceInfo):
     def __init__(self, base_dir, reference_file):
         super().__init__(base_dir, reference_file)
 
-        self.PBS_output_file = "/Users/squ027/test.*"
+        self.PBS_output_file = "doesnotexist.o*"
 
         self.setup()
 
