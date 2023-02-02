@@ -13,7 +13,7 @@ def test_no_change(repro_dirs_same):
     ri = ReproducibilityInfo(
         repro_dirs_same[0],
         repro_dirs_same[1],
-        str(repro_dirs_same[1] / "manifest.yaml"),
+        str(repro_dirs_same[1] / "kgo_manifest.yaml"),
     )
     differences = ri.compare()
     assert not differences
@@ -26,7 +26,7 @@ def test_all_changed(repro_dirs_diff):
     ri = ReproducibilityInfo(
         repro_dirs_diff[0],
         repro_dirs_diff[1],
-        str(repro_dirs_diff[1] / "manifest.yaml"),
+        str(repro_dirs_diff[1] / "kgo_manifest.yaml"),
     )
     differences = ri.compare()
     assert set(differences) == set(REPRO_OUTPUT_FILES)
@@ -50,7 +50,7 @@ def test_missing_reference(repro_dirs_missing, caplog):
         ri = ReproducibilityInfo(
             repro_dirs_missing[0],
             repro_dirs_missing[1],
-            str(repro_dirs_missing[1] / "manifest.yaml"),
+            str(repro_dirs_missing[1] / "kgo_manifest.yaml"),
         )
     assert (
         "Not all reference files exist. Copying from current model output"
@@ -69,7 +69,7 @@ def test_missing_manifest(repro_dirs_same, repro_dirs_empty, caplog):
         ri = ReproducibilityInfo(
             repro_dirs_same[0],
             repro_dirs_same[1],
-            str(repro_dirs_empty[1] / "manifest.yaml"),
+            str(repro_dirs_empty[1] / "kgo_manifest.yaml"),
         )
     assert (
         "Manifest file does not exist. Generating manifest from reference files"
@@ -89,7 +89,7 @@ def test_initial_run(repro_dirs_empty, caplog):
         ri = ReproducibilityInfo(
             repro_dirs_empty[0],
             repro_dirs_empty[1],
-            str(repro_dirs_empty[1] / "manifest.yaml"),
+            str(repro_dirs_empty[1] / "kgo_manifest.yaml"),
         )
     assert (
         "Not all reference files exist. Copying from current model output"
