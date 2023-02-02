@@ -47,8 +47,8 @@ class TextFile:
 
     def get(self, pattern):
         """
-        Search the contents of a file for a provided regex pattern and return a list
-        of the specified groupings (one for each occurrence). Stolen and adapted from
+        Search the contents of a file for a provided regex pattern and return a list of the
+        specified groupings (one for each occurrence). Stolen and adapted from
         https://github.com/metomi/rose/blob/master/metomi/rose/apps/ana_builtin/grepper.py#L492
 
         Parameters
@@ -116,12 +116,14 @@ def _get_files(file):
             raise FileNotFoundError
     except FileNotFoundError:
         logger.exception(f"The file {file} does not exist to be parsed")
+        raise
 
     try:
         if len(found_files) > 1:
             raise MultipleFilesFoundError
     except MultipleFilesFoundError:
         logger.exception(f"Multiple files found with the pattern {file}")
+        raise
 
     return found_files[0]
 

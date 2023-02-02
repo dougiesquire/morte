@@ -8,7 +8,7 @@ def test_parse_pbs_summary(base_dir):
     """
     Test that PBS summary is parsed correctly
     """
-    pi = PerformanceInfo(base_dir, None)
+    pi = PerformanceInfo(base_dir, base_dir / "doesnotexist.yaml")
     expected = {
         "Service Units": 123.45,
         "NCPUs Requested": 234,
@@ -22,7 +22,7 @@ def test_parse_pbs_summary(base_dir):
         "JobFS used": 0,
     }
     for key, exp in expected.items():
-        res = pi.data["PBS summary"].pop(key)
+        res = pi.current_info["PBS summary"].pop(key)
         assert res == exp
 
-    assert not pi.data["PBS summary"]
+    assert not pi.current_info["PBS summary"]

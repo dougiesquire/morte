@@ -62,14 +62,14 @@ def test_missing_reference(repro_dirs_missing, caplog):
 
 def test_missing_manifest(repro_dirs_same, repro_dirs_empty, caplog):
     """
-    Test cases where the manifest file does not exist
+    Test case where the manifest file does not exist
     """
     # Reference directory consistent with outputs
     with caplog.at_level(logging.WARNING):
         ri = ReproducibilityInfo(
             repro_dirs_same[0],
             repro_dirs_same[1],
-            str(repro_dirs_empty[1] / "kgo_manifest.yaml"),
+            str(repro_dirs_empty[1] / "doesnotexist.yaml"),
         )
     assert (
         "Manifest file does not exist. Generating manifest from reference files"

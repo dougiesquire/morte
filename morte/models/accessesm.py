@@ -21,8 +21,6 @@ class PerformanceInfo(BasePerformanceInfo):
 
         if jobname:
             self.pbs_output_file = f"{jobname}.o*"
-        else:
-            self.pbs_output_file = "*.o*"
 
         self.setup()
 
