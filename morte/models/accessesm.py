@@ -5,14 +5,24 @@
 Interface for the ACCESS-ESM model
 """
 
+import os
+
 from .base import BasePerformanceInfo, BaseReproducibilityInfo
+from ..parse import YamlFile
 
 
 class PerformanceInfo(BasePerformanceInfo):
     def __init__(self, base_dir, reference_file):
         super().__init__(base_dir, reference_file)
 
-        self.PBS_output_file = "doesnotexist.o*"
+        # Payu config contains some useful info
+        config = YamlFile(os.path.join(self.base_dir, "config.yaml"))
+        jobname = config.get("jobname")
+
+        if jobname:
+            self.pbs_output_file = f"{jobname}.o*"
+        else:
+            self.pbs_output_file = "*.o*"
 
         self.setup()
 
